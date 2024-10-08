@@ -1,0 +1,419 @@
+<style>
+#philosophers-journey-game {
+    font-family: Arial, sans-serif;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+#philosophers-journey-game h1,
+#philosophers-journey-game #question,
+#philosophers-journey-game #options,
+#philosophers-journey-game #feedback,
+#philosophers-journey-game #score,
+#philosophers-journey-game #explanation,
+#philosophers-journey-game #progress-bar,
+#philosophers-journey-game #timer,
+#philosophers-journey-game #lifelines,
+#philosophers-journey-game #game-controls {
+    margin-bottom: 20px;
+}
+#philosophers-journey-game button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+#philosophers-journey-game button:hover {
+    background-color: #45a049;
+}
+#philosophers-journey-game #explanation {
+    background-color: #e0f7fa;
+    padding: 10px;
+    border-radius: 5px;
+}
+#progress-bar {
+    width: 100%;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+#progress {
+    width: 0%;
+    height: 20px;
+    background-color: #4CAF50;
+    transition: width 0.5s ease-in-out;
+}
+#timer {
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+}
+.lifeline {
+    display: inline-block;
+    margin-right: 10px;
+    padding: 5px 10px;
+    background-color: #2196F3;
+    color: white;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.lifeline.used {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+#start-exit-game {
+    background-color: #4CAF50;
+}
+#start-exit-game.exit {
+    background-color: #f44336;
+}
+#start-exit-game.exit:hover {
+    background-color: #d32f2f;
+}
+.hidden {
+    display: none;
+}
+</style>
+
+<script>
+(function() {
+    const questions = [
+        {
+            question: "In the trolley problem, which choice would an act utilitarian make?",
+            options: ["Pull the lever, one death", "Don't pull the lever, five deaths"],
+            correct: 0,
+            explanation: "An act utilitarian would choose to pull the lever, resulting in one death instead of five. This is because act utilitarianism focuses on maximizing immediate utility or happiness, and in this case, one death is considered a better consequence than five deaths."
+        },
+        {
+        question: "In the trolley problem, which choice would a rule utilitarian make?",
+        options: ["Pull the lever, one death", "Don't pull the lever, five deaths"],
+        correct: 1,
+        explanation: "A rule utilitarian would likely choose not to pull the lever. This is because rule utilitarianism focuses on following rules that generally lead to the best outcomes. Choosing to kill one to save others could set a dangerous precedent that would make people distrust each other, potentially leading to worse outcomes in the long run."
+    },
+    {
+        question: "Which philosopher claimed that knowledge is the only virtue?",
+        options: ["Socrates", "Plato", "Aristotle", "Epicurus", "Zeno of Citium"],
+        correct: 0,
+        explanation: "Socrates claimed that knowledge is the only virtue. He believed that all traits considered good were forms of knowledge, and that those who acted badly simply did not know the nature of virtue."
+    },
+    {
+        question: "Who coined the ideas of 'vices of excess' and 'vices of deficiency'?",
+        options: ["Socrates", "Plato", "Aristotle", "Epicurus", "Zeno of Citium"],
+        correct: 2,
+        explanation: "Aristotle coined the ideas of 'vices of excess' and 'vices of deficiency'. He believed that virtue depends on a rational balance of a trait, rather than having too much or too little of that trait."
+    },
+    {
+        question: "Which philosophers did not write any surviving works?",
+        options: ["Socrates and Zeno of Citium", "Plato and Aristotle", "Epicurus and Zeno of Citium"],
+        correct: 0,
+        explanation: "Socrates and Zeno of Citium did not write any surviving works. The information we have about their philosophies comes from accounts written by their students and followers."
+    },
+    {
+        question: "What is the name of the philosophy that states that we do not have free will?",
+        options: ["Predeterminism", "Determinism", "Destiny", "Metaphysical Libertarianism"],
+        correct: 1,
+        explanation: "Determinism is the philosophy that states we do not have free will. It argues that all events, including human decisions and actions, are determined by previously existing causes."
+    },
+    {
+        question: "What is compatibilism?",
+        options: ["Free will and hard determinism are compatible", "Free will and determinism are compatible", "Metaphysical libertarianism and determinism are compatible"],
+        correct: 1,
+        explanation: "Compatibilism is the view that free will and determinism are compatible. It argues that it's possible for free will to exist even if determinism is true."
+    },
+    {
+        question: "Which branches of philosophy do free will and the Principle of Alternate Possibilities (PAP) represent an intersection between?",
+        options: ["Metaphysics and political philosophy", "Metaphysics and ethics", "Metaphysics and epistemology", "Ethics and political philosophy"],
+        correct: 1,
+        explanation: "Free will and the Principle of Alternate Possibilities (PAP) represent an intersection between metaphysics and ethics. Free will is a metaphysical concept about the nature of human decision-making, while PAP is an ethical principle about moral responsibility."
+    },
+    {
+        question: "In order of most optimistic to least optimistic, how did Hobbes, Locke, and Rousseau describe the state of nature?",
+        options: ["Rousseau, Hobbes, Locke", "Rousseau, Locke, Hobbes", "Locke, Rousseau, Hobbes", "Locke, Hobbes, Rousseau"],
+        correct: 1,
+        explanation: "From most optimistic to least optimistic, the philosophers described the state of nature as follows: Rousseau (very optimistic), Locke (moderately optimistic), and Hobbes (pessimistic). Rousseau believed the state of nature was ideal, Locke thought it could be cooperative but needed governance, and Hobbes saw it as a constant state of war."
+    },
+    {
+        question: "Which philosopher most directly inspired the Founding Fathers of the United States of America when they wrote the Declaration of Independence?",
+        options: ["Hobbes", "Locke", "Rousseau"],
+        correct: 1,
+        explanation: "John Locke most directly inspired the Founding Fathers of the United States when they wrote the Declaration of Independence. His ideas about natural rights, limited government, and the consent of the governed are clearly reflected in the document."
+    },
+    {
+        question: "What was Epicurus' view on the pursuit of wealth and luxury?",
+        options: ["They are essential for happiness", "They are distractions from true happiness", "They should be moderately pursued", "They are morally wrong"],
+        correct: 1,
+        explanation: "Epicurus believed that the pursuit of wealth and luxury were distractions from true happiness. He argued that what people really wanted was calmness and freedom to enjoy life, which didn't require riches or luxury."
+    },
+    {
+        question: "According to Zeno of Citium, what is the most important aspect of self-awareness?",
+        options: ["Understanding one's emotions", "Knowing one's strengths and weaknesses", "Understanding what is and isn't within an individual's control", "Recognizing one's place in society"],
+        correct: 2,
+        explanation: "According to Zeno of Citium, the founder of Stoicism, the most important aspect of self-awareness was understanding what is and isn't within an individual's control. This idea became a central tenet of Stoic philosophy."
+    },
+    {
+        question: "What is the main difference between act utilitarianism and rule utilitarianism?",
+        options: ["Act utilitarianism focuses on intentions, rule utilitarianism on consequences", "Act utilitarianism considers individual actions, rule utilitarianism considers general rules", "Act utilitarianism is about personal happiness, rule utilitarianism about societal happiness", "There is no significant difference"],
+        correct: 1,
+        explanation: "The main difference is that act utilitarianism considers the consequences of individual actions, while rule utilitarianism focuses on following general rules that tend to promote the greatest good. Rule utilitarianism aims to avoid some of the potential problems that can arise from always choosing the action with the best immediate consequences."
+    },
+    {
+        question: "What was Kant's view on lying?",
+        options: ["It's acceptable if it leads to good consequences", "It's never permissible", "It's acceptable in certain circumstances", "It's a necessary evil"],
+        correct: 1,
+        explanation: "Kant argued that lying is never permissible. He believed that if everyone lied, the very concept of truth would break down, making lying self-defeating. This is an application of his first categorical imperative, which states that we should act only according to rules that could become universal laws."
+    },
+    {
+        question: "What is the 'tabula rasa' concept associated with John Locke?",
+        options: ["The idea that all knowledge comes from experience", "The concept of social contract", "The theory of natural rights", "The principle of separation of powers"],
+        correct: 0,
+        explanation: "The 'tabula rasa' (blank slate) concept is associated with John Locke. It suggests that individuals are born without built-in mental content, and therefore all knowledge comes from experience and perception. This was a fundamental aspect of Locke's empiricist philosophy."
+    }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let shuffledQuestions;
+    let timer;
+    let timeLeft;
+    let lifelines = {
+        fiftyFifty: true,
+        askAudience: true,
+        phoneAFriend: true
+    };
+    let gameInProgress = false;
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function createGameElements() {
+        const gameContainer = document.getElementById('philosophers-journey-game');
+        gameContainer.innerHTML = `
+            <div id="progress-bar"><div id="progress"></div></div>
+            <div id="score" class="hidden">Score: 0</div>
+            <div id="timer" class="hidden">Time left: 30</div>
+            <div id="lifelines" class="hidden">
+                <span class="lifeline" id="fifty-fifty">50/50</span>
+                <span class="lifeline" id="ask-audience">Ask Audience</span>
+                <span class="lifeline" id="phone-friend">Phone a Friend</span>
+            </div>
+            <div id="question"></div>
+            <div id="options"></div>
+            <div id="feedback"></div>
+            <div id="explanation"></div>
+            <div id="game-controls">
+                <button id="start-exit-game">Start Game</button>
+            </div>
+        `;
+
+        document.getElementById('fifty-fifty').addEventListener('click', useFiftyFifty);
+        document.getElementById('ask-audience').addEventListener('click', useAskAudience);
+        document.getElementById('phone-friend').addEventListener('click', usePhoneFriend);
+        document.getElementById('start-exit-game').addEventListener('click', toggleGame);
+    }
+
+    function toggleGame() {
+        if (gameInProgress) {
+            exitGame();
+        } else {
+            startGame();
+        }
+    }
+
+    function startGame() {
+        gameInProgress = true;
+        document.getElementById('start-exit-game').textContent = 'Exit Game';
+        document.getElementById('start-exit-game').classList.add('exit');
+        document.getElementById('score').classList.remove('hidden');
+        document.getElementById('timer').classList.remove('hidden');
+        document.getElementById('lifelines').classList.remove('hidden');
+        shuffledQuestions = [...questions];
+        shuffleArray(shuffledQuestions);
+        currentQuestionIndex = 0;
+        score = 0;
+        document.getElementById('score').textContent = 'Score: 0';
+        lifelines = {fiftyFifty: true, askAudience: true, phoneAFriend: true};
+        document.querySelectorAll('.lifeline').forEach(el => el.classList.remove('used'));
+        displayQuestion();
+    }
+
+    function updateProgressBar() {
+        const progress = document.getElementById('progress');
+        const percentage = ((currentQuestionIndex + 1) / shuffledQuestions.length) * 100;
+        progress.style.width = percentage + '%';
+    }
+
+    function displayQuestion() {
+        updateProgressBar();
+        const q = shuffledQuestions[currentQuestionIndex];
+        document.getElementById('question').textContent = q.question;
+        const optionsEl = document.getElementById('options');
+        optionsEl.innerHTML = '';
+        q.options.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.textContent = option;
+            button.onclick = () => checkAnswer(index);
+            optionsEl.appendChild(button);
+        });
+        document.getElementById('feedback').textContent = '';
+        document.getElementById('explanation').textContent = '';
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timer);
+        timeLeft = 30;
+        updateTimerDisplay();
+        timer = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                checkAnswer(-1);
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        document.getElementById('timer').textContent = `Time left: ${timeLeft}`;
+    }
+
+    function checkAnswer(selectedIndex) {
+        clearInterval(timer);
+        const q = shuffledQuestions[currentQuestionIndex];
+        let pointsEarned = 0;
+        if (selectedIndex === q.correct) {
+            document.getElementById('feedback').textContent = "Correct! Well done.";
+            pointsEarned = 1 + Math.floor(timeLeft / 5);
+            score += pointsEarned;
+        } else {
+            document.getElementById('feedback').textContent = `Incorrect. The correct answer was ${q.options[q.correct]}.`;
+        }
+        document.getElementById('score').textContent = `Score: ${score}`;
+        document.getElementById('explanation').textContent = q.explanation;
+        
+        currentQuestionIndex++;
+        if (currentQuestionIndex < shuffledQuestions.length) {
+            setTimeout(displayQuestion, 5000);
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        gameInProgress = false;
+        clearInterval(timer);
+        document.getElementById('feedback').textContent = `Congratulations! You've completed the Philosopher's Journey. Your final score is ${score} out of ${shuffledQuestions.length}.`;
+        document.getElementById('options').innerHTML = '';
+        document.getElementById('explanation').textContent = '';
+        document.getElementById('progress').style.width = '100%';
+        document.getElementById('timer').textContent = '';
+        document.getElementById('start-exit-game').textContent = 'Start Game';
+        document.getElementById('start-exit-game').classList.remove('exit');
+        updateLeaderboard();
+    }
+
+    function updateLeaderboard() {
+        let leaderboard = JSON.parse(localStorage.getItem('philosopherJourneyLeaderboard') || '[]');
+        leaderboard.push({name: 'Player', score: score});
+        leaderboard.sort((a, b) => b.score - a.score);
+        leaderboard = leaderboard.slice(0, 5);
+        localStorage.setItem('philosopherJourneyLeaderboard', JSON.stringify(leaderboard));
+        displayLeaderboard();
+    }
+
+    function displayLeaderboard() {
+        const leaderboard = JSON.parse(localStorage.getItem('philosopherJourneyLeaderboard') || '[]');
+        let leaderboardHtml = '<h2>Leaderboard</h2><ol>';
+        leaderboard.forEach(entry => {
+            leaderboardHtml += `<li>${entry.name}: ${entry.score}</li>`;
+        });
+        leaderboardHtml += '</ol>';
+        document.getElementById('explanation').innerHTML = leaderboardHtml;
+    }
+
+    function useFiftyFifty() {
+        if (!lifelines.fiftyFifty) return;
+        lifelines.fiftyFifty = false;
+        document.getElementById('fifty-fifty').classList.add('used');
+
+        const q = shuffledQuestions[currentQuestionIndex];
+        const incorrectIndices = q.options.map((_, index) => index).filter(index => index !== q.correct);
+        shuffleArray(incorrectIndices);
+        const indicesToRemove = incorrectIndices.slice(0, 2);
+
+        document.querySelectorAll('#options button').forEach((button, index) => {
+            if (indicesToRemove.includes(index)) {
+                button.style.display = 'none';
+            }
+        });
+    }
+
+    function useAskAudience() {
+        if (!lifelines.askAudience) return;
+        lifelines.askAudience = false;
+        document.getElementById('ask-audience').classList.add('used');
+
+        const q = shuffledQuestions[currentQuestionIndex];
+        const audienceVotes = q.options.map((_, index) => {
+            return index === q.correct ? Math.floor(Math.random() * 30) + 40 : Math.floor(Math.random() * 20);
+        });
+        const totalVotes = audienceVotes.reduce((sum, votes) => sum + votes, 0);
+        const audiencePercentages = audienceVotes.map(votes => Math.round((votes / totalVotes) * 100));
+
+        let audienceResultHtml = '<h3>Audience Results:</h3><ul>';
+        q.options.forEach((option, index) => {
+            audienceResultHtml += `<li>${option}: ${audiencePercentages[index]}%</li>`;
+        });
+        audienceResultHtml += '</ul>';
+        document.getElementById('feedback').innerHTML = audienceResultHtml;
+    }
+
+    function usePhoneFriend() {
+        if (!lifelines.phoneAFriend) return;
+        lifelines.phoneAFriend = false;
+        document.getElementById('phone-friend').classList.add('used');
+
+        const q = shuffledQuestions[currentQuestionIndex];
+        const friendIsCorrect = Math.random() < 0.7;
+        const friendAnswer = friendIsCorrect ? q.correct : Math.floor(Math.random() * q.options.length);
+
+        const friendResponse = `Your friend says: "I'm not entirely sure, but I think the answer is ${q.options[friendAnswer]}."`;
+        document.getElementById('feedback').textContent = friendResponse;
+    }
+
+    function exitGame() {
+        gameInProgress = false;
+        clearInterval(timer);
+        document.getElementById('question').textContent = 'Game Over';
+        document.getElementById('options').innerHTML = '';
+        document.getElementById('feedback').textContent = `You've exited the game. Your final score is ${score} out of ${currentQuestionIndex}.`;
+        document.getElementById('explanation').textContent = '';
+        document.getElementById('progress').style.width = '100%';
+        document.getElementById('timer').textContent = '';
+        document.getElementById('start-exit-game').textContent = 'Start Game';
+        document.getElementById('start-exit-game').classList.remove('exit');
+        document.getElementById('score').classList.add('hidden');
+        document.getElementById('timer').classList.add('hidden');
+        document.getElementById('lifelines').classList.add('hidden');
+        updateLeaderboard();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        createGameElements();
+    });
+})();
+</script>
