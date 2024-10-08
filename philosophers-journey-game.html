@@ -87,7 +87,7 @@
 
 <script>
 (function() {
-    const questions = [
+    const allQuestions = [
         {
             question: "In the trolley problem, which choice would an act utilitarian make?",
             options: ["Pull the lever, one death", "Don't pull the lever, five deaths"],
@@ -180,9 +180,13 @@
     }
     ];
 
+    const QUESTIONS_PER_GAME = 5;
+    const BASE_POINTS_PER_QUESTION = 1;
+    const MAX_BONUS_POINTS_PER_QUESTION = 6;
+
     let currentQuestionIndex = 0;
     let score = 0;
-    let shuffledQuestions;
+    let gameQuestions;
     let timer;
     let timeLeft;
     let lifelines = {
@@ -197,6 +201,12 @@
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
+    }
+
+    function selectRandomQuestions() {
+        let shuffled = [...allQuestions];
+        shuffleArray(shuffled);
+        return shuffled.slice(0, QUESTIONS_PER_GAME);
     }
 
     function createGameElements() {
@@ -240,8 +250,7 @@
         document.getElementById('score').classList.remove('hidden');
         document.getElementById('timer').classList.remove('hidden');
         document.getElementById('lifelines').classList.remove('hidden');
-        shuffledQuestions = [...questions];
-        shuffleArray(shuffledQuestions);
+        gameQuestions = selectRandomQuestions();
         currentQuestionIndex = 0;
         score = 0;
         document.getElementById('score').textContent = 'Score: 0';
@@ -252,13 +261,13 @@
 
     function updateProgressBar() {
         const progress = document.getElementById('progress');
-        const percentage = ((currentQuestionIndex + 1) / shuffledQuestions.length) * 100;
+        const percentage = ((currentQuestionIndex + 1) / QUESTIONS_PER_GAME) * 100;
         progress.style.width = percentage + '%';
     }
 
     function displayQuestion() {
         updateProgressBar();
-        const q = shuffledQuestions[currentQuestionIndex];
+        const q = gameQuestions[currentQuestionIndex];
         document.getElementById('question').textContent = q.question;
         const optionsEl = document.getElementById('options');
         optionsEl.innerHTML = '';
@@ -292,31 +301,32 @@
     }
 
     function checkAnswer(selectedIndex) {
-        clearInterval(timer);
-        const q = shuffledQuestions[currentQuestionIndex];
-        let pointsEarned = 0;
-        if (selectedIndex === q.correct) {
-            document.getElementById('feedback').textContent = "Correct! Well done.";
-            pointsEarned = 1 + Math.floor(timeLeft / 5);
-            score += pointsEarned;
-        } else {
-            document.getElementById('feedback').textContent = `Incorrect. The correct answer was ${q.options[q.correct]}.`;
-        }
-        document.getElementById('score').textContent = `Score: ${score}`;
-        document.getElementById('explanation').textContent = q.explanation;
-        
-        currentQuestionIndex++;
-        if (currentQuestionIndex < shuffledQuestions.length) {
-            setTimeout(displayQuestion, 5000);
-        } else {
-            endGame();
-        }
+    clearInterval(timer);
+    const q = gameQuestions[currentQuestionIndex];
+    let pointsEarned = 0;
+    if (selectedIndex === q.correct) {
+        document.getElementById('feedback').textContent = "Correct! Well done.";
+        pointsEarned = BASE_POINTS_PER_QUESTION + Math.floor(timeLeft / 5);
+        score += pointsEarned;
+    } else {
+        document.getElementById('feedback').textContent = `Incorrect. The correct answer was ${q.options[q.correct]}.`;
     }
+    document.getElementById('score').textContent = `Score: ${score}`;
+    document.getElementById('explanation').textContent = q.explanation;
+    
+    currentQuestionIndex++;
+    if (currentQuestionIndex < QUESTIONS_PER_GAME) {
+        setTimeout(displayQuestion, 5000);
+    } else {
+        setTimeout(concludeGame, 5000);
+    }
+}
 
     function endGame() {
         gameInProgress = false;
         clearInterval(timer);
-        document.getElementById('feedback').textContent = `Congratulations! You've completed the Philosopher's Journey. Your final score is ${score} out of ${shuffledQuestions.length}.`;
+        const maxPossibleScore = QUESTIONS_PER_GAME * (BASE_POINTS_PER_QUESTION + MAX_BONUS_POINTS_PER_QUESTION);
+        document.getElementById('feedback').textContent = `Congratulations! You've completed the Philosopher's Journey. Your final score is ${score} out of a possible ${maxPossibleScore}.`;
         document.getElementById('options').innerHTML = '';
         document.getElementById('explanation').textContent = '';
         document.getElementById('progress').style.width = '100%';
@@ -350,7 +360,7 @@
         lifelines.fiftyFifty = false;
         document.getElementById('fifty-fifty').classList.add('used');
 
-        const q = shuffledQuestions[currentQuestionIndex];
+        const q = gameQuestions[currentQuestionIndex];
         const incorrectIndices = q.options.map((_, index) => index).filter(index => index !== q.correct);
         shuffleArray(incorrectIndices);
         const indicesToRemove = incorrectIndices.slice(0, 2);
@@ -367,7 +377,7 @@
         lifelines.askAudience = false;
         document.getElementById('ask-audience').classList.add('used');
 
-        const q = shuffledQuestions[currentQuestionIndex];
+        const q = gameQuestions[currentQuestionIndex];
         const audienceVotes = q.options.map((_, index) => {
             return index === q.correct ? Math.floor(Math.random() * 30) + 40 : Math.floor(Math.random() * 20);
         });
@@ -387,7 +397,7 @@
         lifelines.phoneAFriend = false;
         document.getElementById('phone-friend').classList.add('used');
 
-        const q = shuffledQuestions[currentQuestionIndex];
+        const q = gameQuestions[currentQuestionIndex];
         const friendIsCorrect = Math.random() < 0.7;
         const friendAnswer = friendIsCorrect ? q.correct : Math.floor(Math.random() * q.options.length);
 
@@ -395,12 +405,27 @@
         document.getElementById('feedback').textContent = friendResponse;
     }
 
+  function concludeGame() {
+    gameInProgress = false;
+    const maxPossibleScore = QUESTIONS_PER_GAME * (BASE_POINTS_PER_QUESTION + MAX_BONUS_POINTS_PER_QUESTION);
+    document.getElementById('question').textContent = "Game Over";
+    document.getElementById('feedback').textContent = `Congratulations! You've completed the Philosopher's Journey. Your final score is ${score} out of a possible ${maxPossibleScore}.`;
+    document.getElementById('options').innerHTML = '';
+    document.getElementById('explanation').textContent = '';
+    document.getElementById('progress').style.width = '100%';
+    document.getElementById('timer').textContent = '';
+    document.getElementById('start-exit-game').textContent = 'Start Game';
+    document.getElementById('start-exit-game').classList.remove('exit');
+    updateLeaderboard();
+}
+  
     function exitGame() {
         gameInProgress = false;
         clearInterval(timer);
         document.getElementById('question').textContent = 'Game Over';
         document.getElementById('options').innerHTML = '';
-        document.getElementById('feedback').textContent = `You've exited the game. Your final score is ${score} out of ${currentQuestionIndex}.`;
+        const maxPossibleScore = currentQuestionIndex * (BASE_POINTS_PER_QUESTION + MAX_BONUS_POINTS_PER_QUESTION);
+        document.getElementById('feedback').textContent = `You've exited the game. Your final score is ${score} out of a possible ${maxPossibleScore} for ${currentQuestionIndex} questions.`;
         document.getElementById('explanation').textContent = '';
         document.getElementById('progress').style.width = '100%';
         document.getElementById('timer').textContent = '';
